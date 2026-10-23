@@ -1,0 +1,1 @@
+assets/psychogra.pl/index-*.bin !text !filter !merge !diff

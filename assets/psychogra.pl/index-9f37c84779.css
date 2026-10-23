@@ -1,0 +1,16 @@
+
+/*!
+Theme Name:   	Psychogra-3
+Theme URI:    	https://psychogra.pl/
+Author:         Konrad Korzec
+Author URI:     https://psychogra.pl/
+Description:  	Psychogra site.
+Template:		storefront
+Version:      	3.0.0
+License:      	GNU General Public License v2 or later
+License URI:  	http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain:  	psychogra
+Tags:         	e-commerce, two-columns, left-sidebar, right-sidebar, custom-background, custom-colors, custom-header, custom-menu, featured-images, full-width-template, threaded-comments, accessibility-ready, rtl-language-support, footer-widgets, sticky-post, theme-options
+*/
+footer
+.partners{display:flex}
