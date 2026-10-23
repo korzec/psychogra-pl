@@ -1,0 +1,76 @@
+name: Publish original downloads
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-downloads.yml
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Release tag to create or update
+        required: true
+        default: downloads-v2026.10.23
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Download and publish original files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Download files from psychogra.pl
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          while IFS='|' read -r filename url expected_size; do
+            [[ -z "$filename" ]] && continue
+            output="release-assets/$filename"
+            echo "Downloading $filename"
+            curl --fail --location --retry 3 --retry-all-errors --max-time 900 \
+              --user-agent 'PsychograGitHubRelease/1.0' \
+              "$url" --output "$output"
+            actual_size="$(stat -c '%s' "$output")"
+            if [[ "$actual_size" != "$expected_size" ]]; then
+              echo "Unexpected size for $filename: expected $expected_size bytes, got $actual_size" >&2
+              exit 1
+            fi
+          done <<'ASSETS'
+          Laczanka-0.0.5.zip|https://psychogra.s3.amazonaws.com/Laczanka-0.0.5.zip|48342231
+          Laczanka-0.0.5-src.zip|https://psychogra.s3.amazonaws.com/Laczanka-0.0.5-src.zip|89658239
+          Mis_Zdzis-0.0.1.zip|https://psychogra.s3.amazonaws.com/Mis_Zdzis-0.0.1.zip|27151118
+          Mis_Zdzis-src-0.0.1.zip|https://psychogra.s3.amazonaws.com/Mis_Zdzis-src-0.0.1.zip|102327991
+          Zagadkowy_ogrod-0.0.2.zip|https://psychogra.s3.amazonaws.com/Zagadkowy_ogrod-0.0.2.zip|21740667
+          Zagadkowy_ogrod-0.0.2-src.zip|https://psychogra.s3.amazonaws.com/Zagadkowy_ogrod-0.0.2-src.zip|475962571
+          detektyw_slon-0.0.1.apk|https://psychogra.s3.amazonaws.com/detektyw_slon-0.0.1.apk|6883530
+          detektyw_slon-src-0.0.1.zip|https://psychogra.s3.amazonaws.com/detektyw_slon-src-0.0.1.zip|38414893
+          zaslon-0.0.2.apk|https://psychogra.s3.amazonaws.com/zaslon-0.0.2.apk|3239237
+          zaslon-src-0.0.2.zip|https://psychogra.s3.amazonaws.com/zaslon-src-0.0.2.zip|1580870
+          Laczanka-0.0.5-mac.zip|https://psychogra.pl/download/408/|52651045
+          Zagadkowy_ogrod-0.0.2-mac.zip|https://psychogra.pl/download/401/|25611275
+          mc-kwadrat-v0.0.1.zip|https://psychogra.pl/download/758/|18280021
+          plac-zabaw-v0.0.1.zip|https://psychogra.pl/download/752/|64412682
+          dzien-przedszkolaka-v0.0.1.zip|https://psychogra.pl/download/754/|22615181
+          przyjazne-gotowanie-v0.0.1.apk|https://psychogra.pl/download/762/|13267630
+          Psychogra_v1-0-3_PC.zip|https://psychogra.pl/download/881/|121659210
+          ASSETS
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag_name || 'downloads-v2026.10.23' }}
+          name: Psychogra original downloads
+          body: |
+            Original downloadable game and source packages from [psychogra.pl](https://psychogra.pl/).
+
+            Files were downloaded from the original Psychogra S3 bucket and site download endpoints.
+          files: release-assets/*
+          fail_on_unmatched_files: true
