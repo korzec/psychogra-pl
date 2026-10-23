@@ -41,6 +41,42 @@ IGNORED_QUERY_KEYS = {
 TRACKING_QUERY_KEYS = {"cb", "cache", "nocache", "ver", "version", "x"}
 MAX_URLS = 5000
 USER_AGENT = "Mozilla/5.0 (compatible; PsychograStaticMirror/1.0)"
+RELEASE_DOWNLOAD_BASE = "https://github.com/korzec/psychogra-pl/releases/latest/download/"
+RELEASE_ASSETS_BY_DOWNLOAD_ID = {
+    "266": "Laczanka-0.0.5.zip",
+    "271": "zaslon-0.0.2.apk",
+    "273": "detektyw_slon-0.0.1.apk",
+    "279": "Mis_Zdzis-0.0.1.zip",
+    "286": "Zagadkowy_ogrod-0.0.2.zip",
+    "336": "Laczanka-0.0.5-src.zip",
+    "340": "zaslon-src-0.0.2.zip",
+    "341": "detektyw_slon-src-0.0.1.zip",
+    "357": "Mis_Zdzis-src-0.0.1.zip",
+    "380": "Zagadkowy_ogrod-0.0.2-src.zip",
+    "401": "Zagadkowy_ogrod-0.0.2-mac.zip",
+    "408": "Laczanka-0.0.5-mac.zip",
+    "752": "plac-zabaw-v0.0.1.zip",
+    "754": "dzien-przedszkolaka-v0.0.1.zip",
+    "758": "mc-kwadrat-v0.0.1.zip",
+    "760": "plac-zabaw-v0.0.1.zip",
+    "762": "przyjazne-gotowanie-v0.0.1.apk",
+    "881": "Psychogra_v1-0-3_PC.zip",
+}
+RELEASE_ASSETS_BY_S3_NAME = {
+    name: name
+    for name in (
+        "Laczanka-0.0.5.zip",
+        "Laczanka-0.0.5-src.zip",
+        "Mis_Zdzis-0.0.1.zip",
+        "Mis_Zdzis-src-0.0.1.zip",
+        "Zagadkowy_ogrod-0.0.2.zip",
+        "Zagadkowy_ogrod-0.0.2-src.zip",
+        "detektyw_slon-0.0.1.apk",
+        "detektyw_slon-src-0.0.1.zip",
+        "zaslon-0.0.2.apk",
+        "zaslon-src-0.0.2.zip",
+    )
+}
 
 
 class PageParser(html.parser.HTMLParser):
@@ -111,6 +147,23 @@ def normalize_url(url: str, base: str = BASE_URL) -> str | None:
 def is_site_url(url: str) -> bool:
     host = urllib.parse.urlsplit(url).hostname
     return host in {"psychogra.pl", "www.psychogra.pl"}
+
+
+def release_download_url(url: str, base: str = BASE_URL) -> str | None:
+    normalized = normalize_url(url, base)
+    if not normalized:
+        return None
+    parsed = urllib.parse.urlsplit(normalized)
+    asset_name: str | None = None
+    if parsed.hostname in {"psychogra.pl", "www.psychogra.pl"}:
+        match = re.fullmatch(r"/download/(\d+)/?", parsed.path)
+        if match:
+            asset_name = RELEASE_ASSETS_BY_DOWNLOAD_ID.get(match.group(1))
+    elif parsed.hostname == "psychogra.s3.amazonaws.com":
+        asset_name = RELEASE_ASSETS_BY_S3_NAME.get(posixpath.basename(parsed.path))
+    if not asset_name:
+        return None
+    return RELEASE_DOWNLOAD_BASE + urllib.parse.quote(asset_name, safe="")
 
 
 def is_asset_url(url: str, reference_kind: str = "") -> bool:
@@ -296,6 +349,10 @@ def localize_reference(value: str, base: str, from_file: str, url_map: dict[str,
             tokens[0] = relative_reference(target_file, from_file) if target_file else tokens[0]
             pieces.append(" ".join(tokens))
         return ", ".join(pieces)
+
+    release_url = release_download_url(value, base)
+    if release_url:
+        return release_url
 
     target_url = normalize_url(value, base)
     if not target_url:
@@ -527,6 +584,8 @@ def main() -> None:
             for kind, value in parser.references:
                 refs = resource_urls(value, page_base or canonical) if kind == "srcset" else [normalize_url(value, page_base or canonical)]
                 for target in refs:
+                    if target and release_download_url(target):
+                        continue
                     if target and not should_skip(target) and (is_site_url(target) or is_asset_url(target, kind)):
                         queue.append(target)
             for _, css in parser.css:
