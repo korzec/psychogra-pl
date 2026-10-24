@@ -40,7 +40,9 @@ function copyStaticAssets() {
 }
 
 export default defineConfig({
-  base: "/",
+  // Keep generated URLs relative so the same build works at both the
+  // GitHub Pages project path and the root of the reverse-proxied domain.
+  base: "./",
   publicDir: false,
   plugins: [copyStaticAssets()],
   server: {

@@ -1,5 +1,7 @@
 (() => {
-  const siteRoot = new URL(import.meta.env.BASE_URL, window.location.origin);
+  // The bundled module lives in the generated assets directory. Resolving
+  // from it preserves the deployment prefix (/psychogra-pl/ or /) at runtime.
+  const siteRoot = new URL("../", import.meta.url);
   const siteUrl = (path) => new URL(path, siteRoot).href;
 
   const header = `
