@@ -113,24 +113,6 @@
   primary.insertAdjacentHTML("afterend", sidebar);
   page.insertAdjacentHTML("beforeend", footer);
 
-  const mobileNavigation = document.createElement("style");
-  mobileNavigation.textContent = `
-    @media screen and (max-width: 768px) {
-      #site-navigation .menu-toggle { display: block; }
-      #site-navigation .primary-navigation { display: none; }
-      #site-navigation.toggled .primary-navigation { display: block; }
-      #site-navigation .primary-navigation > ul,
-      #site-navigation .primary-navigation > ul > li,
-      #site-navigation .primary-navigation ul ul { display: block; }
-      #site-navigation .primary-navigation ul ul {
-        position: static;
-        float: none;
-        width: auto;
-        box-shadow: none;
-      }
-    }`;
-  document.head.append(mobileNavigation);
-
   const navigation = document.querySelector("#site-navigation");
   const menuToggle = navigation?.querySelector(".menu-toggle");
   document.addEventListener("keydown", (event) => {
