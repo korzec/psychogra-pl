@@ -1,4 +1,4 @@
-import { cpSync, existsSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
@@ -33,6 +33,17 @@ function copyStaticAssets() {
             );
           },
         });
+      }
+
+      // Vite flattens CSS into dist/assets, while this legacy mirror keeps
+      // CSS-relative files below dist/assets/psychogra.pl/.
+      const outputAssets = resolve(output, "assets");
+      for (const file of readdirSync(outputAssets)) {
+        if (!file.endsWith(".css")) continue;
+        const cssPath = resolve(outputAssets, file);
+        const css = readFileSync(cssPath, "utf8");
+        const fixedCss = css.replace(/url\((['"]?)wp-content\//g, "url($1psychogra.pl/wp-content/");
+        if (fixedCss !== css) writeFileSync(cssPath, fixedCss);
       }
       writeFileSync(resolve(output, ".nojekyll"), "");
     },
